@@ -8,6 +8,7 @@ import math
 import nibabel
 import numpy as np
 from matplotlib import pyplot as plt
+import skimage
 
 
 def import_volume(file_path):
@@ -175,14 +176,14 @@ def display(
 
 
 if __name__ == "__main__":
-    C0 = 299792458
-    FC = 77e9
+    C0 = 299792458 #
+    FC = 77e9 # freq
     LAMBDA = C0 / FC
 
     Z_IDX = 13
 
     volume, x_vec, y_vec, z_vec = import_volume(
-        r"../../../team-8/20221119-132511-414/20221119-132511-414_reco.img"
+        r"/home/ana/Documents/team-8/20221119-133352-648/20221119-133352-648_reco.img"
     )
 
     Nx = x_vec.size
@@ -200,8 +201,16 @@ if __name__ == "__main__":
         1.8 * ((np.abs(volume_max) - volume_max_range[0]) / (volume_max_range[1] - volume_max_range[0])) - 0.25, 0, 1,
     )
 
-    # 1 --> visualize magnitude of the MIP
-    image = 20 * np.log10(np.abs(volume_max / np.max(volume_max)))
+    # 0: Visualize slice
+    volume_test = compute_slice(np.abs(volume), 30)
+    image_test = 15 * np.log10(np.abs(volume_test / np.max(volume_test)))
+    image_cropped = image_test[75:175, 75:175]
+    display(image_test, dynamic_range=20)
+    display(image_cropped, dynamic_range=20)
+
+
+    # # 1 --> visualize magnitude of the MIP
+    # image = 80 * np.log10(np.abs(volume_max / np.max(volume_max)))
     # display(
     #     image,
     #     img_title="Maximum intensity projection (MIP)",
@@ -213,24 +222,10 @@ if __name__ == "__main__":
     #     ylabel="$y$ in m",
     # )
 
-    for i in range(32):
-        volume_test = compute_slice(np.abs(volume), i)
-        image_test = 10 * np.log10(volume_test / np.max(volume_test))
-        display(
-            image_test,
-            img_title="Slice",
-            cmap_label="Normalized magnitude in dB",
-            xvec=x_vec,
-            yvec=y_vec,
-            dynamic_range=30,
-            xlabel="$x$ in m",
-            ylabel="$y$ in m",
-        )
-
-    # 2 --> visualize phase of the MIP (opacity scaled by alpha_data)
-    _, volume_max_phase = complex2magphase(
-        np.multiply(volume_max, np.exp(((1j * 2 * math.pi) / LAMBDA) * 2 * z_vec[kmax]))
-    )
+    # # 2 --> visualize phase of the MIP (opacity scaled by alpha_data)
+    # _, volume_max_phase = complex2magphase(
+    #     np.multiply(volume_max, np.exp(((1j * 2 * math.pi) / LAMBDA) * 2 * z_vec[kmax]))
+    # )
     # display(
     #     180 / math.pi * volume_max_phase,
     #     color_map=plt.get_cmap("twilight"),
@@ -242,9 +237,9 @@ if __name__ == "__main__":
     #     xlabel="$x$ in m",
     #     ylabel="$y$ in m",
     # )
-
-    # 3 --> visualize the phase of a selected slice (opacity scaled by alpha_data)
-    _, V_slice_phase = complex2magphase(volume[:, :, Z_IDX - 1])
+    #
+    # # 3 --> visualize the phase of a selected slice (opacity scaled by alpha_data)
+    # _, V_slice_phase = complex2magphase(volume[:, :, Z_IDX - 1])
     # display(
     #     180 / math.pi * V_slice_phase,
     #     color_map=plt.get_cmap("twilight"),
@@ -256,8 +251,8 @@ if __name__ == "__main__":
     #     xlabel="$x$ in m",
     #     ylabel="$y$ in m",
     # )
-
-    # 4 --> visualize the distance of the MIP (opacity scaled by alpha_data)
+    #
+    # # 4 --> visualize the distance of the MIP (opacity scaled by alpha_data)
     # display(
     #     z_vec[kmax],
     #     img_title="MIP Distance",
@@ -269,10 +264,10 @@ if __name__ == "__main__":
     #     xlabel="$x$ in m",
     #     ylabel="$y$ in m",
     # )
-
-    # 5 --> visualize the 2D FFT of the MIP
-    S_MIP = compute_fft(volume_max)
-    S_MIP_mag_dB = 20 * np.log10(np.abs(S_MIP))
+    #
+    # # 5 --> visualize the 2D FFT of the MIP
+    # S_MIP = compute_fft(volume_max)
+    # S_MIP_mag_dB = 20 * np.log10(np.abs(S_MIP))
     # display(
     #     S_MIP_mag_dB,
     #     img_title="MIP 2D FFT",
@@ -282,10 +277,10 @@ if __name__ == "__main__":
     #     xlabel="$k_x$ in $2\\pi \\,/\\, \\lambda$",
     #     ylabel="$k_y$ in $2\\pi \\,/\\, \\lambda$",
     # )
-
-    # 6 --> visualize the 2D FFT of a single slice
-    S_slice = compute_fft(volume[:, :, Z_IDX - 1])
-    S_slice_mag_dB = 20 * np.log10(np.abs(S_slice))
+    #
+    # # 6 --> visualize the 2D FFT of a single slice
+    # S_slice = compute_fft(volume[:, :, Z_IDX - 1])
+    # S_slice_mag_dB = 20 * np.log10(np.abs(S_slice))
     # display(
     #     S_slice_mag_dB,
     #     img_title=f"Single slice 2D FFT (z = {z_vec[Z_IDX - 1]:.4f} m)",

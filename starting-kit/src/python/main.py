@@ -8,7 +8,7 @@ import math
 import nibabel
 import numpy as np
 from matplotlib import pyplot as plt
-
+from skimage.filters import threshold_otsu, threshold_local, threshold_mean
 
 def import_volume(file_path):
     """Import 3D volumetric data from file.
@@ -205,7 +205,11 @@ if __name__ == "__main__":
     image_test = 15 * np.log10(np.abs(volume_test / np.max(volume_test)))
     image_cropped = image_test[75:175, 75:175]
     display(image_test, dynamic_range=20)
-    display(image_cropped, dynamic_range=20)
+    display(image_cropped, dynamic_range=10)
+
+    normalized_data = (image_cropped - np.min(image_cropped)) / (np.max(image_cropped) - np.min(image_cropped))
+    binary = 0.9 < normalized_data
+    display(binary)
 
 
     # # 1 --> visualize magnitude of the MIP

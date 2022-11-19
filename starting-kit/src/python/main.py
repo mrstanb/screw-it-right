@@ -8,7 +8,6 @@ import math
 import nibabel
 import numpy as np
 from matplotlib import pyplot as plt
-import skimage
 
 
 def import_volume(file_path):
@@ -183,7 +182,7 @@ if __name__ == "__main__":
     Z_IDX = 13
 
     volume, x_vec, y_vec, z_vec = import_volume(
-        r"/home/ana/Documents/team-8/20221119-133352-648/20221119-133352-648_reco.img"
+        r"../../../team-8/20221119-133352-648/20221119-133352-648_reco.img"
     )
 
     Nx = x_vec.size
@@ -222,10 +221,26 @@ if __name__ == "__main__":
     #     ylabel="$y$ in m",
     # )
 
-    # # 2 --> visualize phase of the MIP (opacity scaled by alpha_data)
-    # _, volume_max_phase = complex2magphase(
-    #     np.multiply(volume_max, np.exp(((1j * 2 * math.pi) / LAMBDA) * 2 * z_vec[kmax]))
-    # )
+    for i in range(32):
+        volume_test = compute_slice(np.abs(volume), i)
+        if np.max(volume_test) == 0:
+            continue
+        image_test = 30 * np.log10(volume_test / np.max(volume_test))
+        display(
+            image_test,
+            img_title=f"Slice {i}",
+            cmap_label="Normalized magnitude in dB",
+            xvec=x_vec,
+            yvec=y_vec,
+            dynamic_range=50,
+            xlabel="$x$ in m",
+            ylabel="$y$ in m",
+        )
+
+    # 2 --> visualize phase of the MIP (opacity scaled by alpha_data)
+    _, volume_max_phase = complex2magphase(
+        np.multiply(volume_max, np.exp(((1j * 2 * math.pi) / LAMBDA) * 2 * z_vec[kmax]))
+    )
     # display(
     #     180 / math.pi * volume_max_phase,
     #     color_map=plt.get_cmap("twilight"),

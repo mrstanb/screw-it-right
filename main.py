@@ -1,7 +1,9 @@
 import os
 import json
+
 import nibabel
 import numpy as np
+import cv2
 
 from matplotlib import pyplot as plt
 from argparse import ArgumentParser
@@ -126,8 +128,22 @@ def display(
 
 
 def transform(img):
-    # TODO: image pre-processing
-    return img[75:175, 75:175]
+    lower_bound = -200
+    img = img[75:175, 75:175]
+    orig = img.copy()
+
+    for i in range(len(img)):
+        for j in range(len(img[0])):
+            if img[i][j] == float("-inf"):
+                img[i][j] = lower_bound
+
+    img_normalized = 255 * (img - np.min(img)) / (np.max(img) - np.min(img))
+    img_gauss = cv2.GaussianBlur(img_normalized, (7, 7), 0)
+
+    _, _, _, max_loc = cv2.minMaxLoc(img_gauss)
+    cv2.circle(orig, max_loc, 5, (255, 0, 0), 1)
+
+    return orig
 
 
 def main():
@@ -143,7 +159,7 @@ def main():
         raise ValueError(f"Path '{data_sample_path}' is invalid!")
 
     volume, x_vec, y_vec, z_vec = import_volume(data_sample_path)
-    chosen_slices = [10, 30]
+    chosen_slices = [6, 9, 21]
 
     for i in chosen_slices:
         s = compute_slice(np.abs(volume), i)
@@ -153,13 +169,7 @@ def main():
         image_raw = 30 * np.log10(s / np.max(s))
         display(
             transform(image_raw),
-            img_title=f"Slice {i}",
-            cmap_label="Normalized magnitude in dB",
-            xvec=x_vec,
-            yvec=y_vec,
-            dynamic_range=50,
-            xlabel="$x$ in m",
-            ylabel="$y$ in m",
+            img_title=f"Slice {i}"
         )
 
 

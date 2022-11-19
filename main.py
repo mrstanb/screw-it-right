@@ -130,18 +130,21 @@ def display(
 
 def transform(img):
     lower_bound = -200
+    # Crop image (expect that screw is in the center)
     img = img[75:175, 75:175]
     orig = img.copy()
 
-    for i in range(len(img)):
-        for j in range(len(img[0])):
-            if img[i][j] == float("-inf"):
-                img[i][j] = lower_bound
+    # Replace noise by lower bound value
+    img[img == float("-inf")] = lower_bound
 
+    # Normalize for OpenCV
     img_normalized = 255 * (img - np.min(img)) / (np.max(img) - np.min(img))
+    # Apply Gaussian blur to enhance bright spots
     img_gauss = cv2.GaussianBlur(img_normalized, (7, 7), 0)
 
+    # Apply MinMaxLoc to get the brightest spot in the image (where we expect to have a screw)
     _, _, _, max_loc = cv2.minMaxLoc(img_gauss)
+    # Draw circle around the point for visualization purposes
     cv2.circle(orig, max_loc, 5, (255, 0, 0), 1)
     cv2.circle(img_gauss, max_loc, 5, (255, 0, 0), 1)
 
@@ -161,8 +164,10 @@ def main():
         raise ValueError(f"Path '{data_sample_path}' is invalid!")
 
     volume, x_vec, y_vec, z_vec = import_volume(data_sample_path)
+    # We empirically chose slices where we can see the screw
     chosen_slices = [i for i in range(5, 20)]
 
+    # From each slice, collect the central point of the screw
     point_cloud = []
 
     for i in chosen_slices:
@@ -202,10 +207,14 @@ def main():
 
     p_5 = np.array((x_5, y_5))
     p_20 = np.array((x_20, y_20))
-    dist = np.linalg.norm(p_5 - p_20)
-    angle = np.degrees(np.arcsin(dist / 30))
+    cat = np.linalg.norm(p_5 - p_20)
+    angle = np.degrees(np.arctan(cat / 30))     # 30 mm are between slices 5 and 20
+    print(f"For Miruna {90 - angle}")
 
     theta = np.radians(45)
+    # Rotate because our piece of wood is in a 45 deg angle in the image
+    # This eventually serves the purpose of determining if the screw is facing upwards or downwards
+    # This will be later used for the force calculation
     rotation_matrix = np.array(((np.cos(theta), -np.sin(theta)), (np.sin(theta), np.cos(theta))))
     xy_5_prime = rotation_matrix @ np.array((x_5, y_5))
     xy_20_prime = rotation_matrix @ np.array((x_20, y_20))

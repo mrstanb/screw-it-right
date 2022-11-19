@@ -8,6 +8,7 @@ import cv2
 from matplotlib import pyplot as plt
 from argparse import ArgumentParser
 from pathlib import Path
+import pyransac3d as pyrsc
 
 
 def import_volume(file_path):
@@ -67,7 +68,7 @@ def compute_slice(_volume, _z_idx=0):
 
 def display(
         img,
-        color_map=plt.get_cmap("viridis"),
+        color_map=plt.get_cmap("magma"),
         img_title=None,
         cmap_label=None,
         alphadata=None,
@@ -142,8 +143,9 @@ def transform(img):
 
     _, _, _, max_loc = cv2.minMaxLoc(img_gauss)
     cv2.circle(orig, max_loc, 5, (255, 0, 0), 1)
+    cv2.circle(img_gauss, max_loc, 5, (255, 0, 0), 1)
 
-    return orig
+    return orig, img_gauss, max_loc
 
 
 def main():
@@ -159,7 +161,9 @@ def main():
         raise ValueError(f"Path '{data_sample_path}' is invalid!")
 
     volume, x_vec, y_vec, z_vec = import_volume(data_sample_path)
-    chosen_slices = [6, 9, 21]
+    chosen_slices = [i for i in range(5, 20)]
+
+    point_cloud = []
 
     for i in chosen_slices:
         s = compute_slice(np.abs(volume), i)
@@ -167,10 +171,48 @@ def main():
             continue
 
         image_raw = 30 * np.log10(s / np.max(s))
+        orig, img_gauss, max_lock = transform(image_raw)
+
+        # display(
+        #     orig,
+        #     img_title=f"Image with circle {i}"
+        # )
         display(
-            transform(image_raw),
-            img_title=f"Slice {i}"
+            img_gauss,
+            img_title=f"Slice {i} with Gaussian filter"
         )
+
+        point_cloud.append([max_lock[0], max_lock[1], i])
+
+    pc_array = np.array(point_cloud)
+
+    plane1 = pyrsc.Line()
+    a, b, inliers = plane1.fit(pc_array, 3)
+
+    # Compute x and y for intersection with plane at z = 5
+    x_5 = a[0] * ((5 - b[2]) / a[2]) + b[0]
+    y_5 = a[1] * ((5 - b[2]) / a[2]) + b[1]
+
+    # Compute x and y for intersection with plane at z =  20
+    x_20 = a[0] * ((20 - b[2]) / a[2]) + b[0]
+    y_20 = a[1] * ((20 - b[2]) / a[2]) + b[1]
+
+    print(f"Values for x_5 and y_5: {x_5} and {y_5}")
+    print(f"Values for x_20 and y_20: {x_20} and {y_20}")
+
+    p_5 = np.array((x_5, y_5))
+    p_20 = np.array((x_20, y_20))
+    dist = np.linalg.norm(p_5 - p_20)
+    angle = np.degrees(np.arcsin(dist / 30))
+
+    theta = np.radians(45)
+    rotation_matrix = np.array(((np.cos(theta), -np.sin(theta)), (np.sin(theta), np.cos(theta))))
+    xy_5_prime = rotation_matrix @ np.array((x_5, y_5))
+    xy_20_prime = rotation_matrix @ np.array((x_20, y_20))
+    if xy_5_prime[0] < xy_20_prime[0]:
+        angle *= -1
+
+    print(angle)
 
 
 if __name__ == '__main__':

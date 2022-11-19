@@ -1,9 +1,10 @@
 import math
 
+
 def compute_max_influential_force(alpha: float, k_mod: float = 0.7, gamma_m: float = 1.3,
                                   f_k: float = 80, len_inside_wall: float = 70,
                                   len_outside_wall: float = 10, width_of_screw: float = 1.5) -> float:
-    '''
+    """
     Computes the maximum allowed influential force of a screw, screwed in a wooden wall
     Note: This function currently assumes a wooden birch wall with specific elasticity, as well as other
         parameters which are taken from the German handbook for civil engineers
@@ -17,10 +18,10 @@ def compute_max_influential_force(alpha: float, k_mod: float = 0.7, gamma_m: flo
                     width_of_screw (float): The width of the screw (not the screw head width) (in mm)
             Returns:
                     The maximum allowed influential force of the screw upon the wall (in kg.)
-    '''
+    """
 
     # Make sure alpha is a positive angle
-    if (alpha < 0):
+    if alpha < 0:
         alpha = convert_negative_degrees_to_positive(alpha)
 
     # Calculate f_d which is needed for wooden material and requires the wooden material coefficients,
@@ -55,8 +56,10 @@ def compute_max_influential_force(alpha: float, k_mod: float = 0.7, gamma_m: flo
     # Make sure to convert the force to kg (for easier intuition)
     return convert_newton_to_kg(max_influential_force)
 
+
 def convert_negative_degrees_to_positive(negative_degrees: float) -> float:
     return 360 + negative_degrees
+
 
 def convert_newton_to_kg(newton_value: float) -> float:
     return newton_value / 9.81

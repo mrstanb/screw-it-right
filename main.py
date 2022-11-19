@@ -1,14 +1,14 @@
 import os
 import json
-
 import nibabel
 import numpy as np
 import cv2
+import pyransac3d as pyrsc
+import force_calculation as fc
 
 from matplotlib import pyplot as plt
 from argparse import ArgumentParser
 from pathlib import Path
-import pyransac3d as pyrsc
 
 
 def import_volume(file_path):
@@ -155,6 +155,7 @@ def main():
     usage = "Detect load that a screw can withstand."
     parser = ArgumentParser(usage=usage)
     parser.add_argument("--input", type=str, help="path to folder with input microwave data", required=True)
+    np.seterr(divide='ignore')
 
     args = parser.parse_args()
     input_file_path = args.input
@@ -176,40 +177,35 @@ def main():
             continue
 
         image_raw = 30 * np.log10(s / np.max(s))
-        orig, img_gauss, max_lock = transform(image_raw)
+        orig, img_gauss, max_loc = transform(image_raw)
 
         # display(
-        #     orig,
-        #     img_title=f"Image with circle {i}"
+        #     img_gauss,
+        #     img_title=f"Slice {i} with Gaussian Blur"
         # )
-        display(
-            img_gauss,
-            img_title=f"Slice {i} with Gaussian filter"
-        )
 
-        point_cloud.append([max_lock[0], max_lock[1], i])
+        point_cloud.append([max_loc[0], max_loc[1], i])
 
     pc_array = np.array(point_cloud)
 
-    plane1 = pyrsc.Line()
-    a, b, inliers = plane1.fit(pc_array, 3)
+    rsc_line = pyrsc.Line()
+    a, b, _ = rsc_line.fit(pc_array, 3)
 
     # Compute x and y for intersection with plane at z = 5
     x_5 = a[0] * ((5 - b[2]) / a[2]) + b[0]
     y_5 = a[1] * ((5 - b[2]) / a[2]) + b[1]
 
-    # Compute x and y for intersection with plane at z =  20
+    # Compute x and y for intersection with plane at z = 20
     x_20 = a[0] * ((20 - b[2]) / a[2]) + b[0]
     y_20 = a[1] * ((20 - b[2]) / a[2]) + b[1]
 
-    print(f"Values for x_5 and y_5: {x_5} and {y_5}")
-    print(f"Values for x_20 and y_20: {x_20} and {y_20}")
+    # print(f"Values for x_5 and y_5: {x_5} and {y_5}")
+    # print(f"Values for x_20 and y_20: {x_20} and {y_20}")
 
     p_5 = np.array((x_5, y_5))
     p_20 = np.array((x_20, y_20))
     cat = np.linalg.norm(p_5 - p_20)
     angle = np.degrees(np.arctan(cat / 30))     # 30 mm are between slices 5 and 20
-    print(f"For Miruna {90 - angle}")
 
     theta = np.radians(45)
     # Rotate because our piece of wood is in a 45 deg angle in the image
@@ -221,7 +217,9 @@ def main():
     if xy_5_prime[0] < xy_20_prime[0]:
         angle *= -1
 
-    print(angle)
+    # Force computation (in kg)
+    force_kg = fc.compute_max_influential_force(float(angle))
+    print(f"Maximum force under angle {angle}°: {force_kg} KG")
 
 
 if __name__ == '__main__':

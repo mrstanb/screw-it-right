@@ -219,7 +219,7 @@ def main():
 
     # Force computation (in kg)
     force_kg = fc.compute_max_influential_force(float(angle))
-    print(f"Maximum force under angle {angle}°: {force_kg} KG")
+    print(f"Maximum force under angle {round(angle, 2)}°: {round(force_kg, 2)} KG")
 
 
 if __name__ == '__main__':

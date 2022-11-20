@@ -2,7 +2,17 @@
 
 This is the repository for the "Screw It Right" project from HackaTUM 2022
 
-# Project structure
+---
+
+## Table of Contents
+
+1. [Project structure](#project-structure)
+1. [Usage](#usage)
+1. [Requirements](#requirements)
+
+---
+
+## Project structure
 
 The project is rather simple and can be summarized as follows:
 
@@ -10,7 +20,9 @@ The project is rather simple and can be summarized as follows:
 - `force_calculation.py` - represents a specifically constructed model of a mechanical system which aims to calculate the maximum allowed force that can be applied to the screw before any damage has been done to the wall and/or screw
 - **Note:** The mechanical system is idealized and currently tailored to wooden walls with specific qualitative coefficients assumed. The coefficients were taken from the German handbook for civil engineers
 
-# Usage
+---
+
+## Usage
 
 To use the program, simply pass it the folder with the image data of interest, like so:
 
@@ -18,6 +30,14 @@ To use the program, simply pass it the folder with the image data of interest, l
 $ python3 main.py --input <path-to-image-data-folder>
 ```
 
-# Requirements
+---
+
+## Requirements
 
 Python 3.9+ is recommended as a requirement
+Further packages that might require additional installation are:
+
+- `cv2`
+- `numpy`
+- `matplotlib`
+- `pyransac3d`

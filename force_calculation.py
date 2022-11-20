@@ -51,7 +51,7 @@ def compute_max_influential_force(alpha: float, k_mod: float = 0.7, gamma_m: flo
     '''
 
     # Compute the maximum allowed influential force
-    max_influential_force = (net_force * (2 / 3) * len_inside_wall) / len_outside_wall
+    max_influential_force = abs((net_force * (2 / 3) * len_inside_wall) / len_outside_wall)
 
     # Make sure to convert the force to kg (for easier intuition)
     return convert_newton_to_kg(max_influential_force)
